@@ -4,7 +4,6 @@ import sequelize from '../config/database.js';
 const User = sequelize.define('User', {
     id: {
         type: DataTypes.UUID,
-        allowNull: false,
         primaryKey: true,
         defaultValue: DataTypes.UUIDV4,
     },
@@ -20,11 +19,21 @@ const User = sequelize.define('User', {
         type: DataTypes.STRING(20),
         allowNull: true,
     },
-    password: {
+    role: {
+        type: DataTypes.ENUM('superAdmin', 'broker', 'developer', 'user'),
+        allowNull: true,
+        defaultValue: 'user',
+    },
+    isActive: {
+        type: DataTypes.BOOLEAN,
+        allowNull: true,
+        defaultValue: true,
+    },
+    otp: {
         type: DataTypes.STRING(255),
         allowNull: true,
     },
-    otp: {
+    password: {
         type: DataTypes.STRING(255),
         allowNull: true,
     },
@@ -32,24 +41,12 @@ const User = sequelize.define('User', {
         type: DataTypes.STRING(255),
         allowNull: true,
     },
-    isActive: {
-        type: DataTypes.BOOLEAN,
+    accessToken: {
+        type: DataTypes.STRING(255),
         allowNull: true,
-        defaultValue: true,
-    },
-    createdAt: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: DataTypes.NOW,
-    },
-    updatedAt: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: DataTypes.NOW,
     },
 }, {
     tableName: 'users',
-    schema: 'public',
     timestamps: true,
 });
 

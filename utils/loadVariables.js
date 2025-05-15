@@ -24,7 +24,7 @@ const requiredEnvVars = [
     'DB_PASSWORD',
     'DB_DIALECT',
     'DB_LOGGING',
-    'DB_SSL_CERT_PATH',
+    // 'DB_SSL_CERT_PATH',
 
     // JWT
     'JWT_SECRET',

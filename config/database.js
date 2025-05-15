@@ -17,12 +17,7 @@ const sequelize = new Sequelize(name, user, password, {
     dialect,
     logging,
     dialectOptions,
-    pool: {
-        max: 3,
-        acquire: 60000,
-        idle: 10000,
-        evict: 10000,
-    },
+    pool: { max: 3, acquire: 60000, idle: 10000, evict: 10000, },
     retry: {
         max: 5,
         backoffBase: 100,
@@ -42,6 +37,7 @@ export const connectToDatabase = async (retries = 3) => {
         try {
             await sequelize.authenticate();
             console.log("✅ Database connected successfully.");
+            await sequelize.sync({ alter: true });
             return;
         } catch (err) {
             console.error(`🐞 Database connection failed. Retries left: ${retries - 1}`, err);
@@ -50,8 +46,8 @@ export const connectToDatabase = async (retries = 3) => {
                 console.error("🐞 Exhausted all retries. Exiting...");
                 process.exit(1);
             }
-            console.log("🔄 Retrying database connection in 5 seconds...");
-            await new Promise(res => setTimeout(res, 5000));
+            console.log("🔄 Retrying database connection in 3 seconds...");
+            await new Promise(res => setTimeout(res, 3000));
         }
     }
 };
