@@ -4,50 +4,34 @@ import sequelize from '../config/database.js';
 const User = sequelize.define('User', {
     id: {
         type: DataTypes.UUID,
-        primaryKey: true,
         defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
     },
-    name: {
-        type: DataTypes.STRING(255),
-        allowNull: true,
-    },
+    name: DataTypes.STRING,
     email: {
-        type: DataTypes.STRING(255),
-        allowNull: true,
+        type: DataTypes.STRING,
+        unique: true,
     },
     phone: {
         type: DataTypes.STRING(20),
-        allowNull: true,
+        unique: true,
     },
-    role: {
-        type: DataTypes.ENUM('superAdmin', 'broker', 'developer', 'user'),
-        allowNull: true,
-        defaultValue: 'user',
-    },
-    isActive: {
+    isSuperAdmin: {
         type: DataTypes.BOOLEAN,
-        allowNull: true,
-        defaultValue: true,
+        defaultValue: false,
     },
-    otp: {
-        type: DataTypes.STRING(255),
-        allowNull: true,
+    status: {
+        type: DataTypes.ENUM('active', 'inactive', 'blocked'),
+        defaultValue: 'active',
     },
-    password: {
-        type: DataTypes.STRING(255),
-        allowNull: true,
-    },
-    refreshToken: {
-        type: DataTypes.STRING(255),
-        allowNull: true,
-    },
-    accessToken: {
-        type: DataTypes.STRING(255),
-        allowNull: true,
-    },
+    otp: DataTypes.STRING,
+    password: DataTypes.STRING,
+    refreshToken: DataTypes.STRING,
+    accessToken: DataTypes.STRING,
 }, {
     tableName: 'users',
     timestamps: true,
 });
+
 
 export default User;
