@@ -20,14 +20,9 @@ const User = sequelize.define('User', {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
     },
-    status: {
-        type: DataTypes.ENUM('active', 'inactive', 'blocked'),
-        defaultValue: 'active',
-    },
     otp: DataTypes.STRING,
     password: DataTypes.STRING,
     refreshToken: DataTypes.STRING,
-    accessToken: DataTypes.STRING,
 }, {
     tableName: 'users',
     timestamps: true,

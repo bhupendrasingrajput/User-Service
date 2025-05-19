@@ -15,9 +15,9 @@ const Tenant = sequelize.define('Tenant', {
         type: DataTypes.STRING,
         allowNull: false,
     },
-    isActive: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: true,
+    status: {
+        type: DataTypes.ENUM('active', 'inactive',),
+        defaultValue: 'active',
     },
 }, {
     tableName: 'tenants',

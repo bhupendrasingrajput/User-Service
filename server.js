@@ -7,8 +7,6 @@ import morgan from 'morgan';
 import errorHandler from './middlewares/errorHandler.js';
 import { connectToDatabase } from './config/database.js';
 import config from './config/index.js';
-import User from './models/user.model.js'
-import { ApiError } from './utils/ApiError.js';
 import globalRoutes from './routes/index.routes.js'
 
 const app = express();

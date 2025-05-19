@@ -33,6 +33,10 @@ const Access = sequelize.define('Access', {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
     },
+    status: {
+        type: DataTypes.ENUM('active', 'inactive'),
+        defaultValue: 'active',
+    },
 }, {
     tableName: 'access',
     timestamps: true,
