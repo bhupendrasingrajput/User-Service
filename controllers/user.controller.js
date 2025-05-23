@@ -1,52 +1,38 @@
-import { User } from '../models/index.model.js';
+import { Access, Tenant, User } from '../models/index.model.js';
 import { ApiError } from '../utils/ApiError.js';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import config from '../config/index.js';
+import { Op } from 'sequelize';
 
 export const createUser = async (req, res, next) => {
     try {
-        const { name, email, phone, role, password } = req.body;
+        const { name, email, phone, password, service, tenantId } = req.body;
+        // if (!name || !email || !phone || !service) throw new ApiError(400, 'name, email, phone, and service are required');
 
-        if (!name || !email || !phone || !password) throw new ApiError(400, 'name, email, phone, and password are required');
-
-        const existingUser = await User.findOne({ where: { email } });
-
-        if (existingUser) throw new ApiError(409, 'User already exists');
-
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        const user = await User.create({ name, email, phone, role, password: hashedPassword, });
-
-        const payload = { id: user.id, email: user.email, role: user.role };
-
-        const accessToken = jwt.sign(payload, config.jwt.secret, { expiresIn: '7d' });
-        const refreshToken = jwt.sign(payload, config.jwt.secret, { expiresIn: '30d' });
-
-        user.accessToken = accessToken;
-        user.refreshToken = refreshToken;
-
-        await user.save();
-
-        const userData = user.toJSON();
-        delete userData.password;
-        delete userData.otp;
-        delete userData.refreshToken;
-        delete userData.accessToken;
-
-        return res.status(201).json({
-            status: 'success',
-            user: userData,
-            tokens: {
-                accessToken,
-                refreshToken
-            }
+        const isExists = await User.findOne({
+            where: { email },
+            attributes: ['id']
         });
 
+        if (isExists) throw new ApiError(409, 'User already exists');
+
+        const hashedPassword = password ? await bcrypt.hash(password, 10) : null;
+
+        const user = await User.create({ name, email, phone, password: hashedPassword, });
+        const access = await Access.create({ userId: user?.id, service, tenantId });
+
+        const userData = user.toJSON();
+        const accessData = access.toJSON();
+
+        return res.status(201).json({
+            status: 'success', user: {
+                id: userData?.id, name: userData?.name, email: userData?.email, phone: userData?.phone,
+                access: { id: accessData?.id, service: accessData?.service, status: accessData?.status }
+            }
+        });
     } catch (error) {
         next(error);
     }
-};
+}
 
 export const getAllUsers = async (req, res, next) => {
     try {
@@ -66,14 +52,20 @@ export const getUserByEmail = async (req, res, next) => {
     try {
         const { email } = req.params;
 
-        if (!email) throw new ApiError(400, 'Email is required');
+        // if (!email) throw new ApiError(400, 'Email is required');
 
         const user = await User.findOne({
             where: { email },
-            attributes: { exclude: ['password', 'otp', 'refreshToken', 'accessToken', 'createdAt', 'updatedAt'] }
+            attributes: ['id', 'name', 'email', 'phone'],
+            include: [
+                {
+                    model: Access, required: false, attributes: ['id', 'service', 'status'],
+                    include: [{ model: Tenant, required: false, attributes: ['id', 'name', 'schema', 'status'] }]
+                }
+            ]
         });
 
-        if (!user) throw new ApiError(404, 'User not found');
+        // if (!user) throw new ApiError(404, 'User not found');
 
         return res.status(200).json({
             status: 'success',
