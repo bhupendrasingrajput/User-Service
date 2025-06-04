@@ -1,13 +1,13 @@
 import './utils/loadVariables.js';
 
-import express from 'express';
 import cors from 'cors';
+import express from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import errorHandler from './middlewares/errorHandler.js';
 import { connectToDatabase } from './config/database.js';
 import config from './config/index.js';
-import globalRoutes from './routes/index.routes.js'
+import errorHandler from './middlewares/errorHandler.js';
+import globalRoutes from './routes/index.routes.js';
 
 const app = express();
 

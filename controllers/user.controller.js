@@ -1,38 +1,62 @@
+import bcrypt from 'bcryptjs';
 import { Access, Tenant, User } from '../models/index.model.js';
 import { ApiError } from '../utils/ApiError.js';
-import bcrypt from 'bcryptjs';
-import { Op } from 'sequelize';
+import sequelize from "../config/database.js";
 
 export const createUser = async (req, res, next) => {
+    const t = await sequelize.transaction();
     try {
         const { name, email, phone, password, service, tenantId } = req.body;
-        // if (!name || !email || !phone || !service) throw new ApiError(400, 'name, email, phone, and service are required');
 
         const isExists = await User.findOne({
             where: { email },
-            attributes: ['id']
+            attributes: ['id'],
+            transaction: t,
+            lock: t.LOCK.UPDATE
         });
 
-        if (isExists) throw new ApiError(409, 'User already exists');
+        if (isExists) {
+            await t.rollback();
+            throw new ApiError(409, 'User already exists');
+        }
 
         const hashedPassword = password ? await bcrypt.hash(password, 10) : null;
 
-        const user = await User.create({ name, email, phone, password: hashedPassword, });
-        const access = await Access.create({ userId: user?.id, service, tenantId });
+        const user = await User.create({
+            name,
+            email,
+            phone,
+            password: hashedPassword
+        }, { transaction: t });
 
-        const userData = user.toJSON();
-        const accessData = access.toJSON();
+        const access = await Access.create({
+            userId: user.id,
+            service,
+            tenantId
+        }, { transaction: t });
+
+        await t.commit();
 
         return res.status(201).json({
-            status: 'success', user: {
-                id: userData?.id, name: userData?.name, email: userData?.email, phone: userData?.phone,
-                access: { id: accessData?.id, service: accessData?.service, status: accessData?.status }
+            status: 'success',
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                access: {
+                    id: access.id,
+                    service: access.service,
+                    status: access.status
+                }
             }
         });
+
     } catch (error) {
+        await t.rollback();
         next(error);
     }
-}
+};
 
 export const getAllUsers = async (req, res, next) => {
     try {
@@ -52,24 +76,44 @@ export const getUserByEmail = async (req, res, next) => {
     try {
         const { email } = req.params;
 
-        // if (!email) throw new ApiError(400, 'Email is required');
-
-        const user = await User.findOne({
+        const userInstance = await User.findOne({
             where: { email },
-            attributes: ['id', 'name', 'email', 'phone'],
+            attributes: ['id', 'name', 'email', 'phone', 'password', 'isSuperAdmin'],
             include: [
                 {
-                    model: Access, required: false, attributes: ['id', 'service', 'status'],
-                    include: [{ model: Tenant, required: false, attributes: ['id', 'name', 'schema', 'status'] }]
+                    model: Access,
+                    required: false,
+                    attributes: ['id', 'service', 'status'],
+                    as: 'accesses',
+                    include: [
+                        {
+                            model: Tenant,
+                            required: false,
+                            attributes: ['id', 'name', 'schema', 'status']
+                        }
+                    ]
                 }
             ]
         });
 
-        // if (!user) throw new ApiError(404, 'User not found');
+        if (!userInstance) {
+            throw new ApiError(404, 'User not found');
+        }
+
+        const user = userInstance.toJSON();
+
+        const accessesObj = {};
+        if (user.accesses && Array.isArray(user.accesses)) {
+            user.accesses.forEach(access => {
+                const { service, ...details } = access;
+                accessesObj[service] = details;
+            });
+        }
+        user.accesses = accessesObj;
 
         return res.status(200).json({
             status: 'success',
-            user: user
+            user
         });
     } catch (error) {
         next(error);
